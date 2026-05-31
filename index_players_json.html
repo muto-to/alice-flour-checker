@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>My Neighbor Alice - Flour Ranking from players.json</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    :root{--panel:#fff8ea;--text:#4f432f;--muted:#8a806f;--accent:#d6a33a;--accent2:#9c6b22;--good:#3d8b55;--bad:#b6533c;--line:#d7c8aa;--shadow:rgba(78,61,33,.18)}
+    *{box-sizing:border-box}
+    body{margin:0;min-height:100vh;font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:radial-gradient(circle at top left,rgba(255,221,140,.35),transparent 32%),linear-gradient(180deg,#f7f0e1 0%,#eadcc1 100%);color:var(--text);padding:20px}
+    .app{width:min(1180px,100%);margin:0 auto;background:var(--panel);border:3px solid var(--line);border-radius:28px;box-shadow:0 18px 48px var(--shadow);overflow:hidden}
+    header{padding:30px 24px;background:linear-gradient(135deg,#b98a2d,#e1b34b);color:#fff7dc;text-align:center}
+    h1{margin:0;font-size:clamp(1.55rem,4vw,3rem);text-shadow:0 2px 0 rgba(0,0,0,.12)}
+    .subtitle{margin-top:8px;font-size:.98rem;opacity:.95}
+    main{padding:24px}
+    .target-card{display:grid;grid-template-columns:1fr auto;gap:16px;align-items:center;padding:20px;border:2px solid var(--line);border-radius:22px;background:#fffdf6;margin-bottom:20px}
+    .target-title{font-size:clamp(1.4rem,4vw,2.35rem);font-weight:900;color:#5a4a35;line-height:1.1}
+    .target-meta{margin-top:6px;color:var(--muted);font-weight:700}
+    .target-icon{width:76px;height:76px;border-radius:20px;background:linear-gradient(135deg,#fff4c8,#d8a846);display:grid;place-items:center;font-size:2.4rem;border:2px solid #c89c3c}
+    .panel{padding:18px;border-radius:22px;border:2px solid var(--line);background:#fffdf6;margin-bottom:18px}
+    .controls{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+    button{border:0;border-radius:16px;padding:13px 18px;background:var(--accent);color:#fff;font-weight:900;font-size:1rem;cursor:pointer;box-shadow:0 5px 0 var(--accent2);transition:transform .12s ease,box-shadow .12s ease,filter .12s ease}
+    button:hover{filter:brightness(1.03);transform:translateY(-1px)}
+    button:active{transform:translateY(3px);box-shadow:0 2px 0 var(--accent2)}
+    button:disabled{opacity:.55;cursor:not-allowed;transform:none}
+    button.secondary{background:#9da39c;box-shadow:0 5px 0 #68706b}
+    button.danger{background:#ba6658;box-shadow:0 5px 0 #884237}
+    input,select{border:2px solid var(--line);border-radius:12px;padding:10px 12px;font-size:1rem;background:white;color:var(--text)}
+    textarea{width:100%;min-height:110px;border:2px solid var(--line);border-radius:12px;padding:10px 12px;font-size:.95rem;background:white;color:var(--text);resize:vertical}
+    .status{min-height:30px;margin:12px 0 18px;font-weight:800;color:var(--muted);white-space:pre-wrap}
+    .error{color:var(--bad)}.ok{color:var(--good)}
+    .progress-wrap{display:none;margin:14px 0;padding:8px;border:2px solid var(--line);border-radius:18px;background:#fffdf6}.progress-wrap.show{display:block}
+    .progress-bar{height:24px;width:0%;background:linear-gradient(90deg,#8bcf7a,#d6a33a);border-radius:12px;transition:width .2s}.progress-text{font-weight:900;margin-top:6px;color:var(--muted)}
+    .summary{display:none;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-bottom:18px}.summary.show{display:grid}
+    .summary-card{padding:16px;border-radius:18px;background:#fffdf6;border:2px solid var(--line)}
+    .summary-label{color:var(--muted);font-weight:900;margin-bottom:6px;font-size:.88rem}.summary-value{font-size:1.7rem;font-weight:1000;color:#5a4a35}
+    .ranking{display:none;border-radius:24px;border:3px solid var(--line);background:linear-gradient(180deg,#fffdf8,#f2e6cc);overflow:hidden}.ranking.show{display:block}
+    .ranking-header{padding:16px 18px;background:#e7d8b8;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+    .ranking-title{font-size:1.25rem;font-weight:1000}.ranking-list{padding:14px;display:grid;gap:10px}
+    .rank-row{display:grid;grid-template-columns:74px 1fr 150px;gap:12px;align-items:center;padding:12px;background:#fffdf7;border:2px solid var(--line);border-radius:18px}
+    .rank-badge{height:52px;border-radius:16px;display:grid;place-items:center;color:white;font-size:1.35rem;font-weight:1000;background:#8f8068}
+    .rank-row.rank-1 .rank-badge{background:linear-gradient(135deg,#e6a51e,#f3cf69);color:#5a3a00}.rank-row.rank-2 .rank-badge{background:linear-gradient(135deg,#88929a,#d7dee3);color:#35404a}.rank-row.rank-3 .rank-badge{background:linear-gradient(135deg,#9a6228,#e0ae72);color:#4a2509}
+    .player-name{font-size:1.25rem;font-weight:1000;color:#5a4a35;word-break:break-word}.player-sub{margin-top:4px;color:var(--muted);font-size:.82rem;word-break:break-all}
+    .amount-box{text-align:right;white-space:nowrap}.amount{font-size:2rem;line-height:1;color:var(--good);font-weight:1000}.amount-label{color:var(--muted);font-weight:800;margin-top:4px}
+    .failed{display:none;margin-top:18px;padding:16px;border-radius:18px;border:2px solid #e2b0a8;background:#fff2ef;color:var(--bad)}.failed.show{display:block}
+    .small{font-size:.9rem;color:var(--muted);line-height:1.7}.note{margin-top:14px;color:var(--muted);font-size:.9rem;line-height:1.65}
+    code{background:rgba(0,0,0,.06);padding:2px 5px;border-radius:6px}
+    @media(max-width:720px){body{padding:10px}main{padding:16px}.target-card{grid-template-columns:1fr}.target-icon{width:64px;height:64px}.rank-row{grid-template-columns:58px 1fr}.amount-box{grid-column:1/-1;text-align:left;padding-left:70px}}
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header>
+      <h1>🌾 Flour Ranking</h1>
+      <div class="subtitle">players.json から対象ユーザーだけ調査</div>
+    </header>
+    <main>
+      <div class="target-card">
+        <div>
+          <div class="target-title">Sunset Wheat Flour</div>
+          <div class="target-meta">内部名: <code>cooking_wheat_flour</code></div>
+          <div class="target-meta">対象リスト: <code>players.json</code></div>
+        </div>
+        <div class="target-icon">🌾</div>
+      </div>
+
+      <div class="panel">
+        <div class="controls">
+          <button id="startButton" onclick="startRankingFromJson()">players.json からランキング作成</button>
+          <button class="secondary" onclick="loadPlayersJsonOnly()">リストだけ確認</button>
+          <button class="secondary" onclick="copyRankingText()">結果をコピー</button>
+          <button class="danger" onclick="stopScan()">停止</button>
+          <label class="small">同時取得:
+            <input id="concurrency" type="number" value="3" min="1" max="10" style="width:80px">
+          </label>
+          <label class="small">0個を表示:
+            <select id="showZero" onchange="renderRanking(lastResults,lastFailures)">
+              <option value="no">しない</option>
+              <option value="yes">する</option>
+            </select>
+          </label>
+        </div>
+
+        <div class="note">
+          GitHubには <code>index.html</code> と同じ場所に <code>players.json</code> を置いてください。
+          <code>players.json</code> は <code>["Thecupcake","muto","Olli"]</code> のような形式です。
+        </div>
+
+        <details style="margin-top:12px">
+          <summary><strong>読み込んだユーザーリスト</strong></summary>
+          <textarea id="loadedPlayers" readonly></textarea>
+        </details>
+      </div>
+
+      <div class="status" id="status">players.json を用意してからボタンを押してください。</div>
+
+      <div class="progress-wrap" id="progressWrap">
+        <div class="progress-bar" id="progressBar"></div>
+        <div class="progress-text" id="progressText">0 / 0</div>
+      </div>
+
+      <section class="summary" id="summary">
+        <div class="summary-card"><div class="summary-label">調査成功</div><div class="summary-value" id="successCount">0</div></div>
+        <div class="summary-card"><div class="summary-label">Flour所有者</div><div class="summary-value" id="ownerCount">0</div></div>
+        <div class="summary-card"><div class="summary-label">合計 Flour</div><div class="summary-value" id="totalFlour">0</div></div>
+        <div class="summary-card"><div class="summary-label">1位</div><div class="summary-value" id="topPlayer">-</div></div>
+      </section>
+
+      <section class="ranking" id="ranking">
+        <div class="ranking-header"><div class="ranking-title">Sunset Wheat Flour Ranking</div><div class="small">多い順に自動ソート</div></div>
+        <div class="ranking-list" id="rankingList"></div>
+      </section>
+
+      <section class="failed" id="failedBox">
+        <strong>取得できなかったユーザー</strong>
+        <div id="failedList"></div>
+      </section>
+    </main>
+  </div>
+
+  <script>
+    const BASE_URL = "https://postchain-p-node1.myneighboralice.com/query/F31D7A38B33D12A5D948EE9CF170983A7CA5EFFFAAA31094C5B9CF94442D9FA2";
+    const TARGET_ITEM_NAME = "cooking_wheat_flour";
+
+    let lastResults = [];
+    let lastFailures = [];
+    let shouldStop = false;
+    let doneCount = 0;
+    let totalCount = 0;
+
+    function setStatus(message, isError = false) {
+      const status = document.getElementById("status");
+      status.textContent = message;
+      status.className = isError ? "status error" : "status";
+    }
+
+    function setLoading(isLoading) {
+      const button = document.getElementById("startButton");
+      button.disabled = isLoading;
+      button.textContent = isLoading ? "調査中..." : "players.json からランキング作成";
+    }
+
+    function stopScan() {
+      shouldStop = true;
+      setStatus("停止リクエストを出しました。現在の処理が終わるまで少し待ってください。");
+    }
+
+    async function fetchJson(url) {
+      const response = await fetch(url);
+      if (!response.ok) throw new Error("HTTP " + response.status);
+      return await response.json();
+    }
+
+    async function loadPlayersJson() {
+      const response = await fetch("players.json?ts=" + Date.now());
+      if (!response.ok) {
+        throw new Error("players.json が見つかりません。index.html と同じ場所に置いてください。HTTP " + response.status);
+      }
+
+      const data = await response.json();
+      const names = normalizePlayerNames(data);
+
+      if (names.length === 0) {
+        throw new Error("players.json にユーザー名がありません。");
+      }
+
+      return names;
+    }
+
+    function normalizePlayerNames(data) {
+      let names = [];
+
+      if (Array.isArray(data)) {
+        names = data.map(item => {
+          if (typeof item === "string") return item;
+          if (item && typeof item === "object") return item.username || item.name || "";
+          return "";
+        });
+      } else if (data && Array.isArray(data.players)) {
+        names = data.players.map(item => {
+          if (typeof item === "string") return item;
+          if (item && typeof item === "object") return item.username || item.name || "";
+          return "";
+        });
+      }
+
+      names = names.map(name => String(name).trim()).filter(Boolean);
+      return Array.from(new Set(names));
+    }
+
+    async function loadPlayersJsonOnly() {
+      try {
+        const names = await loadPlayersJson();
+        document.getElementById("loadedPlayers").value = names.join("\n");
+        setStatus("players.json を読み込みました: " + names.length + "人");
+      } catch (error) {
+        setStatus(error.message, true);
+      }
+    }
+
+    async function findPlayerByUsername(username) {
+      const url = BASE_URL + "?type=player.find_by_username&username=" + encodeURIComponent(username);
+      return await fetchJson(url);
+    }
+
+    async function listAssetsByPlayer(accountId) {
+      const url = BASE_URL + "?type=admin.list_assets_by_player&account_id=" + encodeURIComponent(accountId);
+      return await fetchJson(url);
+    }
+
+    function flattenAssets(assetsData) {
+      const items = [];
+      if (!assetsData || typeof assetsData !== "object") return items;
+      Object.values(assetsData).forEach(value => {
+        if (Array.isArray(value)) {
+          value.forEach(item => {
+            if (item && item.name) {
+              items.push({
+                name: String(item.name),
+                amount: Number(item.amount || 0),
+                types: Array.isArray(item.types) ? item.types : []
+              });
+            }
+          });
+        }
+      });
+      return items;
+    }
+
+    function getItemAmount(items, itemName) {
+      return items.filter(item => item.name === itemName).reduce((sum, item) => sum + Number(item.amount || 0), 0);
+    }
+
+    async function checkOneUsername(username) {
+      const player = await findPlayerByUsername(username);
+      if (!player || !player.id) throw new Error("Player not found");
+
+      const assetsData = await listAssetsByPlayer(player.id);
+      const items = flattenAssets(assetsData);
+      const amount = getItemAmount(items, TARGET_ITEM_NAME);
+
+      return {
+        username: player.username || username,
+        id: player.id,
+        amount: amount,
+        itemKinds: items.length
+      };
+    }
+
+    async function startRankingFromJson() {
+      shouldStop = false;
+      setLoading(true);
+      lastResults = [];
+      lastFailures = [];
+      doneCount = 0;
+      totalCount = 0;
+
+      document.getElementById("summary").classList.remove("show");
+      document.getElementById("ranking").classList.remove("show");
+      document.getElementById("failedBox").classList.remove("show");
+      document.getElementById("rankingList").innerHTML = "";
+      document.getElementById("failedList").innerHTML = "";
+      document.getElementById("progressWrap").classList.add("show");
+      updateProgress(0, 0);
+
+      try {
+        setStatus("players.json を読み込み中...");
+        const usernames = await loadPlayersJson();
+        document.getElementById("loadedPlayers").value = usernames.join("\n");
+
+        totalCount = usernames.length;
+        updateProgress(0, totalCount);
+
+        const concurrency = Math.max(1, Math.min(10, Number(document.getElementById("concurrency").value || 3)));
+        setStatus(usernames.length + "人を調査します。同時取得: " + concurrency);
+
+        const results = [];
+        const failures = [];
+        let index = 0;
+
+        async function worker(workerId) {
+          while (index < usernames.length && !shouldStop) {
+            const username = usernames[index++];
+            try {
+              setStatus("調査中 " + (doneCount + 1) + "/" + totalCount + ": " + username);
+              const result = await checkOneUsername(username);
+              results.push(result);
+            } catch (error) {
+              failures.push({ username: username, error: error.message });
+            } finally {
+              doneCount++;
+              updateProgress(doneCount, totalCount);
+
+              if (doneCount % 5 === 0 || doneCount === totalCount) {
+                renderLiveRanking(results);
+              }
+
+              await sleep(150);
+            }
+          }
+        }
+
+        const workers = [];
+        for (let i = 0; i < concurrency; i++) {
+          workers.push(worker(i));
+        }
+
+        await Promise.all(workers);
+
+        results.sort((a, b) => b.amount - a.amount || a.username.localeCompare(b.username));
+        lastResults = results;
+        lastFailures = failures;
+
+        renderRanking(results, failures);
+
+        if (shouldStop) {
+          setStatus("停止しました。取得済みの範囲でランキングを表示しています。");
+        } else {
+          setStatus("完了: " + results.length + "人を調査しました。");
+        }
+      } catch (error) {
+        console.error(error);
+        setStatus("取得に失敗しました: " + error.message, true);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    function updateProgress(done, total) {
+      const percent = total > 0 ? Math.round((done / total) * 100) : 0;
+      document.getElementById("progressBar").style.width = percent + "%";
+      document.getElementById("progressText").textContent = done.toLocaleString() + " / " + total.toLocaleString() + " (" + percent + "%)";
+    }
+
+    function renderLiveRanking(results) {
+      const showZero = document.getElementById("showZero").value === "yes";
+      const sorted = results.slice().sort((a, b) => b.amount - a.amount || a.username.localeCompare(b.username));
+      renderRankingList(showZero ? sorted : sorted.filter(item => item.amount > 0));
+      document.getElementById("ranking").classList.add("show");
+    }
+
+    function renderRanking(results, failures) {
+      const showZero = document.getElementById("showZero").value === "yes";
+      const sorted = results.slice().sort((a, b) => b.amount - a.amount || a.username.localeCompare(b.username));
+      const visibleResults = showZero ? sorted : sorted.filter(item => item.amount > 0);
+      const total = results.reduce((sum, item) => sum + item.amount, 0);
+      const owners = results.filter(item => item.amount > 0);
+      const top = sorted[0];
+
+      document.getElementById("successCount").textContent = results.length.toLocaleString() + "人";
+      document.getElementById("ownerCount").textContent = owners.length.toLocaleString() + "人";
+      document.getElementById("totalFlour").textContent = total.toLocaleString();
+      document.getElementById("topPlayer").textContent = top ? top.username : "-";
+      document.getElementById("summary").classList.add("show");
+
+      renderRankingList(visibleResults);
+      document.getElementById("ranking").classList.add("show");
+
+      if (failures.length > 0) {
+        document.getElementById("failedList").innerHTML = failures.map(item => "<div>" + escapeHtml(item.username) + " / " + escapeHtml(item.error) + "</div>").join("");
+        document.getElementById("failedBox").classList.add("show");
+      }
+    }
+
+    function renderRankingList(results) {
+      const rankingList = document.getElementById("rankingList");
+      if (results.length === 0) {
+        rankingList.innerHTML = "<div class='small'>表示する結果がありません。</div>";
+        return;
+      }
+
+      rankingList.innerHTML = results.map((item, index) => {
+        const rank = index + 1;
+        const rankClass = rank <= 3 ? "rank-" + rank : "";
+        const badge = rank === 1 ? "🥇" : rank === 2 ? "🥈" : rank === 3 ? "🥉" : rank;
+        return ""
+          + '<div class="rank-row ' + rankClass + '">'
+          + '<div class="rank-badge">' + badge + '</div>'
+          + '<div>'
+          + '<div class="player-name">' + escapeHtml(item.username) + '</div>'
+          + '<div class="player-sub">id: ' + escapeHtml(item.id) + '</div>'
+          + '<div class="player-sub">items: ' + Number(item.itemKinds || 0).toLocaleString() + ' kinds</div>'
+          + '</div>'
+          + '<div class="amount-box">'
+          + '<div class="amount">' + Number(item.amount || 0).toLocaleString() + '</div>'
+          + '<div class="amount-label">Flour</div>'
+          + '</div>'
+          + '</div>';
+      }).join("");
+    }
+
+    function copyRankingText() {
+      if (lastResults.length === 0) {
+        setStatus("コピーするランキングがまだありません。", true);
+        return;
+      }
+
+      const visibleResults = document.getElementById("showZero").value === "yes" ? lastResults : lastResults.filter(item => item.amount > 0);
+      const sorted = visibleResults.slice().sort((a, b) => b.amount - a.amount || a.username.localeCompare(b.username));
+      const lines = ["Sunset Wheat Flour Ranking"];
+      sorted.forEach((item, index) => {
+        lines.push((index + 1) + ". " + item.username + " - " + item.amount + " Flour");
+      });
+
+      navigator.clipboard.writeText(lines.join("\n")).then(() => {
+        setStatus("ランキングをコピーしました。");
+      }).catch(() => {
+        setStatus("コピーに失敗しました。", true);
+      });
+    }
+
+    function sleep(ms) {
+      return new Promise(resolve => setTimeout(resolve, ms));
+    }
+
+    function escapeHtml(value) {
+      return String(value)
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+    }
+  </script>
+</body>
+</html>
