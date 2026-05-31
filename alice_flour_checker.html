@@ -1,0 +1,628 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>My Neighbor Alice - Sunset Wheat Flour Checker</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <style>
+    :root {
+      --bg: #f5efe3;
+      --panel: #fff8ea;
+      --panel2: #efe4cc;
+      --text: #4f432f;
+      --muted: #8a806f;
+      --accent: #d6a33a;
+      --accent2: #9c6b22;
+      --good: #3d8b55;
+      --bad: #b6533c;
+      --line: #d7c8aa;
+      --shadow: rgba(78, 61, 33, 0.18);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background:
+        radial-gradient(circle at top left, rgba(255, 221, 140, 0.35), transparent 32%),
+        linear-gradient(180deg, #f7f0e1 0%, #eadcc1 100%);
+      color: var(--text);
+      padding: 20px;
+    }
+
+    .app {
+      width: min(980px, 100%);
+      margin: 0 auto;
+      background: var(--panel);
+      border: 3px solid var(--line);
+      border-radius: 28px;
+      box-shadow: 0 18px 48px var(--shadow);
+      overflow: hidden;
+    }
+
+    header {
+      padding: 28px 24px;
+      background: linear-gradient(135deg, #b98a2d, #e1b34b);
+      color: #fff7dc;
+      text-align: center;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(1.8rem, 4vw, 3rem);
+      letter-spacing: 0.02em;
+      text-shadow: 0 2px 0 rgba(0, 0, 0, 0.12);
+    }
+
+    .subtitle {
+      margin-top: 8px;
+      font-size: 0.98rem;
+      opacity: 0.95;
+    }
+
+    main {
+      padding: 24px;
+    }
+
+    .target-card {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 16px;
+      align-items: center;
+      padding: 20px;
+      border: 2px solid var(--line);
+      border-radius: 22px;
+      background: #fffdf6;
+      margin-bottom: 20px;
+    }
+
+    .target-title {
+      font-size: clamp(1.5rem, 4vw, 2.5rem);
+      font-weight: 800;
+      color: #5a4a35;
+      line-height: 1.1;
+    }
+
+    .target-meta {
+      margin-top: 6px;
+      color: var(--muted);
+      font-weight: 700;
+    }
+
+    .target-icon {
+      width: 76px;
+      height: 76px;
+      border-radius: 20px;
+      background: linear-gradient(135deg, #fff4c8, #d8a846);
+      display: grid;
+      place-items: center;
+      font-size: 2.4rem;
+      border: 2px solid #c89c3c;
+    }
+
+    .search {
+      display: flex;
+      gap: 10px;
+      margin: 22px 0;
+      flex-wrap: wrap;
+    }
+
+    input {
+      flex: 1 1 260px;
+      min-width: 0;
+      border: 3px solid var(--line);
+      border-radius: 16px;
+      padding: 14px 16px;
+      font-size: 1.1rem;
+      background: #fff;
+      color: var(--text);
+      outline: none;
+    }
+
+    input:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 4px rgba(214, 163, 58, 0.18);
+    }
+
+    button {
+      border: 0;
+      border-radius: 16px;
+      padding: 14px 20px;
+      background: var(--accent);
+      color: #fff;
+      font-weight: 800;
+      font-size: 1.02rem;
+      cursor: pointer;
+      box-shadow: 0 5px 0 var(--accent2);
+      transition: transform 0.12s ease, box-shadow 0.12s ease, filter 0.12s ease;
+    }
+
+    button:hover {
+      filter: brightness(1.03);
+      transform: translateY(-1px);
+    }
+
+    button:active {
+      transform: translateY(3px);
+      box-shadow: 0 2px 0 var(--accent2);
+    }
+
+    button.secondary {
+      background: #9da39c;
+      box-shadow: 0 5px 0 #68706b;
+    }
+
+    .status {
+      min-height: 30px;
+      margin: 12px 0 18px;
+      font-weight: 700;
+      color: var(--muted);
+    }
+
+    .result {
+      display: none;
+      margin-top: 18px;
+      padding: 22px;
+      border-radius: 24px;
+      border: 3px solid var(--line);
+      background: linear-gradient(180deg, #fffdf8, #f2e6cc);
+    }
+
+    .result.show {
+      display: block;
+    }
+
+    .player-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      align-items: center;
+      flex-wrap: wrap;
+      padding-bottom: 16px;
+      border-bottom: 2px dashed var(--line);
+      margin-bottom: 18px;
+    }
+
+    .player-name {
+      font-size: 1.6rem;
+      font-weight: 900;
+      color: #5a4a35;
+    }
+
+    .player-id {
+      margin-top: 4px;
+      color: var(--muted);
+      font-size: 0.82rem;
+      word-break: break-all;
+      max-width: 620px;
+    }
+
+    .count-box {
+      text-align: center;
+      min-width: 180px;
+      padding: 18px;
+      border-radius: 20px;
+      background: #fff8df;
+      border: 3px solid #d7b760;
+    }
+
+    .count-label {
+      color: var(--muted);
+      font-weight: 800;
+      margin-bottom: 4px;
+    }
+
+    .count {
+      font-size: clamp(3rem, 9vw, 5.5rem);
+      line-height: 1;
+      font-weight: 1000;
+      color: var(--good);
+    }
+
+    .details {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 12px;
+      margin-top: 16px;
+    }
+
+    .detail {
+      padding: 14px;
+      border-radius: 16px;
+      background: rgba(255, 255, 255, 0.72);
+      border: 1px solid var(--line);
+    }
+
+    .detail-label {
+      color: var(--muted);
+      font-size: 0.82rem;
+      font-weight: 800;
+      margin-bottom: 4px;
+    }
+
+    .detail-value {
+      font-weight: 800;
+      word-break: break-word;
+    }
+
+    .all-items {
+      margin-top: 18px;
+      border-top: 2px dashed var(--line);
+      padding-top: 18px;
+    }
+
+    .all-items-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-bottom: 10px;
+    }
+
+    .small-input {
+      max-width: 320px;
+      padding: 10px 12px;
+      font-size: 0.95rem;
+      border-width: 2px;
+      border-radius: 12px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: #fffdf7;
+      border-radius: 14px;
+      overflow: hidden;
+      font-size: 0.92rem;
+    }
+
+    th, td {
+      text-align: left;
+      padding: 9px 10px;
+      border-bottom: 1px solid #eadfc8;
+      vertical-align: top;
+    }
+
+    th {
+      background: #e7d8b8;
+      color: #5a4a35;
+      position: sticky;
+      top: 0;
+      z-index: 1;
+    }
+
+    .table-wrap {
+      max-height: 420px;
+      overflow: auto;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+    }
+
+    .amount-cell {
+      text-align: right;
+      font-weight: 900;
+      white-space: nowrap;
+    }
+
+    .error {
+      color: var(--bad);
+    }
+
+    .ok {
+      color: var(--good);
+    }
+
+    .note {
+      margin-top: 18px;
+      color: var(--muted);
+      font-size: 0.9rem;
+      line-height: 1.65;
+    }
+
+    @media (max-width: 640px) {
+      body {
+        padding: 10px;
+      }
+
+      main {
+        padding: 16px;
+      }
+
+      .target-card {
+        grid-template-columns: 1fr;
+      }
+
+      .target-icon {
+        width: 64px;
+        height: 64px;
+      }
+
+      .count-box {
+        width: 100%;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="app">
+    <header>
+      <h1>🌾 Flour Checker</h1>
+      <div class="subtitle">My Neighbor Alice / Player Inventory Viewer</div>
+    </header>
+
+    <main>
+      <div class="target-card">
+        <div>
+          <div class="target-title">Sunset Wheat Flour</div>
+          <div class="target-meta">Item, Crafting Material, Craftable, Tier 1</div>
+          <div class="target-meta">内部名: <code>cooking_wheat_flour</code></div>
+        </div>
+        <div class="target-icon">🌾</div>
+      </div>
+
+      <div class="search">
+        <input id="usernameInput" type="text" placeholder="ユーザーネームを入力 例: muto / Thecupcake" autocomplete="off">
+        <button id="searchButton" onclick="searchPlayer()">調べる</button>
+        <button class="secondary" onclick="fillExample('muto')">muto</button>
+        <button class="secondary" onclick="fillExample('Thecupcake')">Thecupcake</button>
+      </div>
+
+      <div class="status" id="status">ユーザーネームを入れると、Sunset Wheat Flour の所持数を自動で調べます。</div>
+
+      <section class="result" id="result">
+        <div class="player-row">
+          <div>
+            <div class="player-name" id="playerName">-</div>
+            <div class="player-id" id="playerId">-</div>
+          </div>
+
+          <div class="count-box">
+            <div class="count-label">Sunset Wheat Flour</div>
+            <div class="count" id="flourCount">0</div>
+            <div class="count-label">個</div>
+          </div>
+        </div>
+
+        <div class="details">
+          <div class="detail">
+            <div class="detail-label">内部アイテム名</div>
+            <div class="detail-value">cooking_wheat_flour</div>
+          </div>
+          <div class="detail">
+            <div class="detail-label">全アイテム種類数</div>
+            <div class="detail-value" id="totalKinds">-</div>
+          </div>
+          <div class="detail">
+            <div class="detail-label">全アイテム合計数</div>
+            <div class="detail-value" id="totalAmount">-</div>
+          </div>
+          <div class="detail">
+            <div class="detail-label">API状態</div>
+            <div class="detail-value ok" id="apiState">OK</div>
+          </div>
+        </div>
+
+        <div class="all-items">
+          <div class="all-items-head">
+            <strong>取得したアイテム一覧</strong>
+            <input class="small-input" id="itemFilter" placeholder="アイテム名で絞り込み" oninput="renderItemsTable()">
+          </div>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>amount</th>
+                  <th>name</th>
+                  <th>types</th>
+                </tr>
+              </thead>
+              <tbody id="itemsBody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="note">
+          このページは公開されている My Neighbor Alice の query API を読み、ユーザー名から player id を取得してから、
+          <code>admin.list_assets_by_player</code> で所持アイテムを取得します。
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script>
+    const BASE_URL = "https://postchain-p-node1.myneighboralice.com/query/F31D7A38B33D12A5D948EE9CF170983A7CA5EFFFAAA31094C5B9CF94442D9FA2";
+    const TARGET_ITEM_NAME = "cooking_wheat_flour";
+
+    let currentItems = [];
+
+    document.getElementById("usernameInput").addEventListener("keydown", function(event) {
+      if (event.key === "Enter") {
+        searchPlayer();
+      }
+    });
+
+    function fillExample(name) {
+      document.getElementById("usernameInput").value = name;
+      searchPlayer();
+    }
+
+    function setStatus(message, isError = false) {
+      const status = document.getElementById("status");
+      status.textContent = message;
+      status.className = isError ? "status error" : "status";
+    }
+
+    function setLoading(isLoading) {
+      const button = document.getElementById("searchButton");
+      button.disabled = isLoading;
+      button.textContent = isLoading ? "読み込み中..." : "調べる";
+    }
+
+    async function fetchJson(url) {
+      const response = await fetch(url);
+
+      if (!response.ok) {
+        throw new Error("HTTP " + response.status);
+      }
+
+      return await response.json();
+    }
+
+    async function findPlayerByUsername(username) {
+      const url = BASE_URL
+        + "?type=player.find_by_username"
+        + "&username=" + encodeURIComponent(username);
+
+      return await fetchJson(url);
+    }
+
+    async function listAssetsByPlayer(accountId) {
+      const url = BASE_URL
+        + "?type=admin.list_assets_by_player"
+        + "&account_id=" + encodeURIComponent(accountId);
+
+      return await fetchJson(url);
+    }
+
+    function flattenAssets(assetsData) {
+      const items = [];
+
+      if (!assetsData || typeof assetsData !== "object") {
+        return items;
+      }
+
+      Object.values(assetsData).forEach(function(value) {
+        if (Array.isArray(value)) {
+          value.forEach(function(item) {
+            if (item && item.name) {
+              items.push({
+                name: String(item.name),
+                amount: Number(item.amount || 0),
+                types: Array.isArray(item.types) ? item.types : []
+              });
+            }
+          });
+        }
+      });
+
+      return items;
+    }
+
+    function getItemAmount(items, itemName) {
+      return items
+        .filter(function(item) {
+          return item.name === itemName;
+        })
+        .reduce(function(sum, item) {
+          return sum + Number(item.amount || 0);
+        }, 0);
+    }
+
+    function getTotalAmount(items) {
+      return items.reduce(function(sum, item) {
+        return sum + Number(item.amount || 0);
+      }, 0);
+    }
+
+    async function searchPlayer() {
+      const username = document.getElementById("usernameInput").value.trim();
+      const result = document.getElementById("result");
+
+      if (!username) {
+        setStatus("ユーザーネームを入力してください。", true);
+        return;
+      }
+
+      setLoading(true);
+      setStatus(username + " を検索中...");
+      result.classList.remove("show");
+      currentItems = [];
+
+      try {
+        const player = await findPlayerByUsername(username);
+
+        if (!player || !player.id) {
+          setStatus("プレイヤーが見つかりませんでした。大文字・小文字やスペルを確認してください。", true);
+          setLoading(false);
+          return;
+        }
+
+        setStatus("プレイヤー発見。アイテム一覧を取得中...");
+
+        const assetsData = await listAssetsByPlayer(player.id);
+        const items = flattenAssets(assetsData);
+        const flourAmount = getItemAmount(items, TARGET_ITEM_NAME);
+
+        currentItems = items.slice().sort(function(a, b) {
+          return b.amount - a.amount || a.name.localeCompare(b.name);
+        });
+
+        document.getElementById("playerName").textContent = player.username || username;
+        document.getElementById("playerId").textContent = "id: " + player.id;
+        document.getElementById("flourCount").textContent = flourAmount.toLocaleString();
+        document.getElementById("totalKinds").textContent = currentItems.length.toLocaleString() + " 種類";
+        document.getElementById("totalAmount").textContent = getTotalAmount(currentItems).toLocaleString() + " 個";
+        document.getElementById("apiState").textContent = "OK";
+
+        renderItemsTable();
+
+        result.classList.add("show");
+        setStatus("取得完了。Sunset Wheat Flour は " + flourAmount.toLocaleString() + " 個です。");
+
+      } catch (error) {
+        console.error(error);
+        document.getElementById("apiState").textContent = "ERROR";
+        setStatus("取得に失敗しました: " + error.message, true);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    function renderItemsTable() {
+      const tbody = document.getElementById("itemsBody");
+      const filter = document.getElementById("itemFilter").value.trim().toLowerCase();
+
+      const filteredItems = currentItems.filter(function(item) {
+        if (!filter) return true;
+        return item.name.toLowerCase().includes(filter) || item.types.join(",").toLowerCase().includes(filter);
+      });
+
+      if (filteredItems.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="3">該当するアイテムがありません。</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = filteredItems.map(function(item) {
+        const isTarget = item.name === TARGET_ITEM_NAME;
+        const nameHtml = isTarget
+          ? "<strong>🌾 " + escapeHtml(item.name) + "</strong>"
+          : escapeHtml(item.name);
+
+        return ""
+          + "<tr>"
+          + '<td class="amount-cell">' + Number(item.amount || 0).toLocaleString() + "</td>"
+          + "<td>" + nameHtml + "</td>"
+          + "<td>" + escapeHtml(item.types.join(", ")) + "</td>"
+          + "</tr>";
+      }).join("");
+    }
+
+    function escapeHtml(value) {
+      return String(value)
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+    }
+  </script>
+</body>
+</html>
