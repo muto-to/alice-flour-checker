@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<title>My Neighbor Alice - Multi User Flour & Stations</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+:root{--panel:#fff8ea;--text:#4f432f;--muted:#8a806f;--accent:#d6a33a;--accent2:#9c6b22;--good:#2f8d55;--bad:#b6533c;--line:#d7c8aa;--shadow:rgba(78,61,33,.18)}
+*{box-sizing:border-box}
+body{margin:0;min-height:100vh;font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:radial-gradient(circle at top left,rgba(255,221,140,.35),transparent 32%),linear-gradient(180deg,#f7f0e1 0%,#eadcc1 100%);color:var(--text);padding:20px}
+.app{width:min(1180px,100%);margin:0 auto;background:var(--panel);border:3px solid var(--line);border-radius:28px;box-shadow:0 18px 48px var(--shadow);overflow:hidden}
+header{padding:30px 24px;background:linear-gradient(135deg,#b98a2d,#e1b34b);color:#fff7dc;text-align:center}
+h1{margin:0;font-size:clamp(1.55rem,4vw,3rem);text-shadow:0 2px 0 rgba(0,0,0,.12)}
+.subtitle{margin-top:8px;font-size:.98rem;opacity:.95}
+main{padding:24px}
+.card,.panel{padding:18px;border-radius:22px;border:2px solid var(--line);background:#fffdf6;margin-bottom:18px}
+.title{font-size:clamp(1.4rem,4vw,2.25rem);font-weight:900;color:#5a4a35}
+.meta{margin-top:6px;color:var(--muted);font-weight:700}
+label{display:block;font-weight:900;margin-bottom:8px}
+textarea{width:100%;min-height:150px;border:3px solid var(--line);border-radius:16px;padding:14px 16px;font-size:1rem;line-height:1.6;background:#fff;color:var(--text);outline:none;resize:vertical}
+button{border:0;border-radius:16px;padding:13px 18px;background:var(--accent);color:#fff;font-weight:900;font-size:1rem;cursor:pointer;box-shadow:0 5px 0 var(--accent2);margin:4px}
+button.secondary{background:#8f9991;box-shadow:0 5px 0 #667069}
+button.danger{background:#ba6658;box-shadow:0 5px 0 #884237}
+button:disabled{opacity:.55;cursor:not-allowed}
+input,select{border:2px solid var(--line);border-radius:12px;padding:10px 12px;font-size:1rem;background:white;color:var(--text)}
+.status{min-height:30px;margin:12px 0 18px;font-weight:800;color:var(--muted);white-space:pre-wrap}.error{color:var(--bad)}
+.progress-wrap{display:none;margin:14px 0;padding:8px;border:2px solid var(--line);border-radius:18px;background:#fffdf6}.progress-wrap.show{display:block}
+.progress-bar{height:24px;width:0%;background:linear-gradient(90deg,#8bcf7a,#d6a33a);border-radius:12px;transition:width .2s}.progress-text{font-weight:900;margin-top:6px;color:var(--muted)}
+.summary{display:none;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-bottom:18px}.summary.show{display:grid}
+.summary-card{padding:16px;border-radius:18px;background:#fffdf6;border:2px solid var(--line)}.summary-label{color:var(--muted);font-weight:900;margin-bottom:6px;font-size:.88rem}.summary-value{font-size:1.7rem;font-weight:1000;color:#5a4a35}
+.results{display:none;border-radius:24px;border:3px solid var(--line);background:linear-gradient(180deg,#fffdf8,#f2e6cc);overflow:hidden}.results.show{display:block}
+.results-header{padding:16px 18px;background:#e7d8b8;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}.results-title{font-size:1.25rem;font-weight:1000}
+.user-list{padding:14px;display:grid;gap:10px}.user-row{display:grid;grid-template-columns:1fr 130px 130px 130px 130px;gap:10px;align-items:center;padding:12px;background:#fffdf7;border:2px solid var(--line);border-radius:18px}
+.user-name{font-size:1.2rem;font-weight:1000;color:#5a4a35;word-break:break-word}.user-sub{margin-top:4px;color:var(--muted);font-size:.82rem;word-break:break-all}
+.metric{padding:12px;border-radius:14px;background:#fff8df;border:2px solid #e4c987;text-align:right}.metric-label{color:var(--muted);font-size:.78rem;font-weight:900;margin-bottom:4px}.metric-value{font-size:1.65rem;line-height:1;font-weight:1000;color:var(--good)}
+.failed{display:none;margin-top:18px;padding:16px;border-radius:18px;border:2px solid #e2b0a8;background:#fff2ef;color:var(--bad)}.failed.show{display:block}
+.note{margin-top:14px;color:var(--muted);font-size:.9rem;line-height:1.65}code{background:rgba(0,0,0,.06);padding:2px 5px;border-radius:6px}
+@media(max-width:900px){.user-row{grid-template-columns:1fr 1fr}.user-row>div:first-child{grid-column:1/-1}}@media(max-width:620px){body{padding:10px}main{padding:16px}.user-row{grid-template-columns:1fr}.metric{text-align:left}}
+</style>
+</head>
+<body>
+<div class="app">
+<header><h1>🌾 Flour & Stations</h1><div class="subtitle">Multiple User Viewer / My Neighbor Alice</div></header>
+<main>
+<div class="card">
+  <div class="title">Sunset Wheat Flour + Cooking / Refining Count</div>
+  <div class="meta">Flour内部名: <code>cooking_wheat_flour</code></div>
+  <div class="meta">Station API: <code>recipes.get_stations</code></div>
+</div>
+
+<div class="panel">
+<label for="usernameList">ユーザーネームを1行ずつ入力</label>
+<textarea id="usernameList">hop
+dolphin
+whale
+Shark
+camele
+horse
+goat
+hideyoshi
+ieyasu
+yellow
+Froggy
+lol
+muto
+SuperSaiyan
+BLACK</textarea>
+<div>
+<button id="startButton" onclick="startCheck()">まとめて調べる</button>
+<button class="secondary" onclick="copyResultsText()">結果をコピー</button>
+<button class="danger" onclick="stopScan()">停止</button>
+<label>同時取得:<input id="concurrency" type="number" value="3" min="1" max="8" style="width:80px"></label>
+<label>並び順:<select id="sortMode" onchange="renderResults(lastResults,lastFailures)"><option value="flour">Flour多い順</option><option value="cooking">Cooking多い順</option><option value="refining">Refining多い順</option><option value="name">名前順</option></select></label>
+</div>
+<div class="note">各ユーザーについて Flour 数、Cooking/Baking 系ステーション数、Refining/Refinery 系ステーション数を表示します。</div>
+</div>
+
+<div class="status" id="status">ユーザーリストを確認して「まとめて調べる」を押してください。</div>
+<div class="progress-wrap" id="progressWrap"><div class="progress-bar" id="progressBar"></div><div class="progress-text" id="progressText">0 / 0</div></div>
+
+<section class="summary" id="summary">
+<div class="summary-card"><div class="summary-label">調査成功</div><div class="summary-value" id="successCount">0</div></div>
+<div class="summary-card"><div class="summary-label">合計 Flour</div><div class="summary-value" id="totalFlour">0</div></div>
+<div class="summary-card"><div class="summary-label">合計 Cooking</div><div class="summary-value" id="totalCooking">0</div></div>
+<div class="summary-card"><div class="summary-label">合計 Refining</div><div class="summary-value" id="totalRefining">0</div></div>
+</section>
+
+<section class="results" id="results"><div class="results-header"><div class="results-title">User Results</div><div class="note">Flour / Cooking / Refining / Stations</div></div><div class="user-list" id="userList"></div></section>
+<section class="failed" id="failedBox"><strong>取得できなかったユーザー</strong><div id="failedList"></div></section>
+</main>
+</div>
+
+<script>
+const BASE_URL="https://postchain-p-node1.myneighboralice.com/query/F31D7A38B33D12A5D948EE9CF170983A7CA5EFFFAAA31094C5B9CF94442D9FA2";
+const TARGET_ITEM_NAME="cooking_wheat_flour";
+let lastResults=[],lastFailures=[],shouldStop=false,doneCount=0,totalCount=0;
+const HIDDEN_STATIONS=["elle_building","fish_exchange_machine","fishing_rods","pudgy","trading_hub","persona_prismatic"];
+
+function parseUsernames(){const raw=document.getElementById("usernameList").value;return Array.from(new Set(raw.split(/\r?\n|,/).map(n=>n.trim()).filter(Boolean)))}
+function setStatus(m,e=false){const s=document.getElementById("status");s.textContent=m;s.className=e?"status error":"status"}
+function setLoading(v){const b=document.getElementById("startButton");b.disabled=v;b.textContent=v?"調査中...":"まとめて調べる"}
+function stopScan(){shouldStop=true;setStatus("停止リクエストを出しました。現在の処理が終わるまで少し待ってください。")}
+async function fetchJson(url){const r=await fetch(url);if(!r.ok)throw new Error("HTTP "+r.status);return await r.json()}
+async function findPlayerByUsername(username){return await fetchJson(BASE_URL+"?type=player.find_by_username&username="+encodeURIComponent(username))}
+async function listAssetsByPlayer(accountId){return await fetchJson(BASE_URL+"?type=admin.list_assets_by_player&account_id="+encodeURIComponent(accountId))}
+async function getStations(accountId){return await fetchJson(BASE_URL+"?type=recipes.get_stations&account_id="+encodeURIComponent(accountId))}
+function flattenAssets(data){const items=[];if(!data||typeof data!=="object")return items;Object.values(data).forEach(v=>{if(Array.isArray(v)){v.forEach(i=>{if(i&&i.name)items.push({name:String(i.name),amount:Number(i.amount||0),types:Array.isArray(i.types)?i.types:[]})})}});return items}
+function getItemAmount(items,name){return items.filter(i=>i.name===name).reduce((s,i)=>s+Number(i.amount||0),0)}
+function normalizeStations(stations){if(!Array.isArray(stations))return[];return stations.filter(s=>{const n=String(s.name||"").toLowerCase();return !HIDDEN_STATIONS.some(h=>n.includes(h))})}
+function stationDisplayName(s){return String(s.name||"").replace("craftingstation_","").replace(/_/g," ").replace(/\b\w/g,c=>c.toUpperCase())}
+function isCookingStation(s){const raw=String(s.name||"").toLowerCase();const d=stationDisplayName(s).toLowerCase();return raw.includes("cooking")||raw.includes("baking")||raw.includes("kitchen")||d.includes("cooking")||d.includes("baking")||d.includes("kitchen")}
+function isRefiningStation(s){const raw=String(s.name||"").toLowerCase();const d=stationDisplayName(s).toLowerCase();return raw.includes("refinery")||raw.includes("refining")||d.includes("refinery")||d.includes("refining")}
+
+async function checkOneUsername(username){
+  const player=await findPlayerByUsername(username);
+  if(!player||!player.id)throw new Error("Player not found");
+  const [assetsData,stationData]=await Promise.all([listAssetsByPlayer(player.id),getStations(player.id)]);
+  const items=flattenAssets(assetsData);
+  const stations=normalizeStations(stationData);
+  return {username:player.username||username,id:player.id,flour:getItemAmount(items,TARGET_ITEM_NAME),cooking:stations.filter(isCookingStation).length,refining:stations.filter(isRefiningStation).length,stations:stations.length,itemKinds:items.length};
+}
+
+async function startCheck(){
+  shouldStop=false;setLoading(true);lastResults=[];lastFailures=[];doneCount=0;
+  document.getElementById("summary").classList.remove("show");document.getElementById("results").classList.remove("show");document.getElementById("failedBox").classList.remove("show");document.getElementById("userList").innerHTML="";document.getElementById("failedList").innerHTML="";document.getElementById("progressWrap").classList.add("show");updateProgress(0,0);
+  try{
+    const usernames=parseUsernames();if(usernames.length===0)throw new Error("ユーザーネームを1つ以上入力してください。");
+    totalCount=usernames.length;updateProgress(0,totalCount);
+    const concurrency=Math.max(1,Math.min(8,Number(document.getElementById("concurrency").value||3)));
+    setStatus(usernames.length+"人を調査します。同時取得: "+concurrency);
+    const results=[],failures=[];let index=0;
+    async function worker(){while(index<usernames.length&&!shouldStop){const username=usernames[index++];try{setStatus("調査中 "+(doneCount+1)+"/"+totalCount+": "+username);const r=await checkOneUsername(username);results.push(r)}catch(e){failures.push({username:username,error:e.message})}finally{doneCount++;updateProgress(doneCount,totalCount);if(doneCount%3===0||doneCount===totalCount){lastResults=results.slice();lastFailures=failures.slice();renderResults(lastResults,lastFailures)}await sleep(150)}}}
+    const workers=[];for(let i=0;i<concurrency;i++)workers.push(worker());await Promise.all(workers);
+    lastResults=results.slice();lastFailures=failures.slice();renderResults(lastResults,lastFailures);
+    setStatus(shouldStop?"停止しました。取得済みの範囲で表示しています。":"完了: "+results.length+"人を調査しました。");
+  }catch(e){console.error(e);setStatus("取得に失敗しました: "+e.message,true)}
+  finally{setLoading(false)}
+}
+function updateProgress(done,total){const p=total>0?Math.round(done/total*100):0;document.getElementById("progressBar").style.width=p+"%";document.getElementById("progressText").textContent=done.toLocaleString()+" / "+total.toLocaleString()+" ("+p+"%)"}
+function sortedResults(results){const mode=document.getElementById("sortMode").value;const list=results.slice();if(mode==="name")return list.sort((a,b)=>a.username.localeCompare(b.username));if(mode==="cooking")return list.sort((a,b)=>b.cooking-a.cooking||b.flour-a.flour||a.username.localeCompare(b.username));if(mode==="refining")return list.sort((a,b)=>b.refining-a.refining||b.flour-a.flour||a.username.localeCompare(b.username));return list.sort((a,b)=>b.flour-a.flour||b.cooking-a.cooking||a.username.localeCompare(b.username))}
+function renderResults(results,failures){
+  const sorted=sortedResults(results);
+  const totalFlour=results.reduce((s,i)=>s+i.flour,0),totalCooking=results.reduce((s,i)=>s+i.cooking,0),totalRefining=results.reduce((s,i)=>s+i.refining,0);
+  document.getElementById("successCount").textContent=results.length.toLocaleString()+"人";document.getElementById("totalFlour").textContent=totalFlour.toLocaleString();document.getElementById("totalCooking").textContent=totalCooking.toLocaleString();document.getElementById("totalRefining").textContent=totalRefining.toLocaleString();document.getElementById("summary").classList.add("show");
+  renderUserList(sorted);document.getElementById("results").classList.add("show");
+  if(failures.length>0){document.getElementById("failedList").innerHTML=failures.map(i=>"<div>"+escapeHtml(i.username)+" / "+escapeHtml(i.error)+"</div>").join("");document.getElementById("failedBox").classList.add("show")}else document.getElementById("failedBox").classList.remove("show")
+}
+function renderUserList(results){const el=document.getElementById("userList");if(results.length===0){el.innerHTML="<div class='note'>表示する結果がありません。</div>";return}el.innerHTML=results.map(i=>'<div class="user-row"><div><div class="user-name">'+escapeHtml(i.username)+'</div><div class="user-sub">id: '+escapeHtml(i.id)+'</div><div class="user-sub">items: '+Number(i.itemKinds||0).toLocaleString()+' kinds</div></div>'+metricHtml("Flour",i.flour)+metricHtml("Cooking",i.cooking)+metricHtml("Refining",i.refining)+metricHtml("Stations",i.stations)+"</div>").join("")}
+function metricHtml(label,value){return '<div class="metric"><div class="metric-label">'+escapeHtml(label)+'</div><div class="metric-value">'+Number(value||0).toLocaleString()+'</div></div>'}
+function copyResultsText(){if(lastResults.length===0){setStatus("コピーする結果がまだありません。",true);return}const sorted=sortedResults(lastResults);const totalFlour=lastResults.reduce((s,i)=>s+i.flour,0),totalCooking=lastResults.reduce((s,i)=>s+i.cooking,0),totalRefining=lastResults.reduce((s,i)=>s+i.refining,0);const lines=["Sunset Wheat Flour / Cooking / Refining","Total Flour: "+totalFlour,"Total Cooking: "+totalCooking,"Total Refining: "+totalRefining,""];sorted.forEach((i,idx)=>lines.push((idx+1)+". "+i.username+" / Flour: "+i.flour+" / Cooking: "+i.cooking+" / Refining: "+i.refining+" / Stations: "+i.stations));navigator.clipboard.writeText(lines.join("\n")).then(()=>setStatus("結果をコピーしました。")).catch(()=>setStatus("コピーに失敗しました。",true))}
+function sleep(ms){return new Promise(r=>setTimeout(r,ms))}
+function escapeHtml(v){return String(v).replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;").replaceAll('"',"&quot;").replaceAll("'","&#039;")}
+</script>
+</body>
+</html>
