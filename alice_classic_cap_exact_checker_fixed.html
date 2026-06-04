@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<title>My Neighbor Alice - Classic Cap Exact Checker</title>
+<title>My Neighbor Alice - Classic Cap Exact Checker v2</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <style>
 :root{--panel:#fff8ea;--text:#4f432f;--muted:#8a806f;--accent:#d6a33a;--accent2:#9c6b22;--good:#2f8d55;--bad:#b6533c;--line:#d7c8aa;--shadow:rgba(78,61,33,.18)}
@@ -56,13 +56,28 @@ input,select{border:2px solid var(--line);border-radius:12px;padding:10px 12px;f
 .failed{display:none;margin-top:18px;padding:16px;border-radius:18px;border:2px solid #e2b0a8;background:#fff2ef;color:var(--bad)}
 .failed.show{display:block}
 code{background:rgba(0,0,0,.06);padding:2px 5px;border-radius:6px}
-@media(max-width:720px){body{padding:10px}main{padding:16px}}
+
+.color-dot{display:inline-block;width:18px;height:18px;border-radius:50%;border:2px solid rgba(0,0,0,.22);vertical-align:-4px;margin-right:6px}
+.color-black{background:#222}
+.color-red{background:#d65252}
+.color-green{background:#5aaa58}
+.color-beige{background:#d8c39b}
+.color-purple{background:#b392d8}
+.user-total-big{font-size:3.8rem;line-height:1;font-weight:1000;color:var(--good);margin:8px 0 4px}
+.user-total-label{font-size:.9rem;color:var(--muted);font-weight:900}
+.user-head{display:grid;grid-template-columns:1fr auto;gap:14px;align-items:center}
+.cap-short{font-size:1.05rem;font-weight:1000}
+.cap-patch{font-weight:1000}
+.cap-color{color:var(--muted);font-weight:900}
+.item-card.has-item{border-color:#d6a33a;background:#fff4d4;box-shadow:0 3px 0 rgba(156,107,34,.18)}
+
+@media(max-width:720px){body{padding:10px}main{padding:16px}.user-head{grid-template-columns:1fr}.user-total-big{font-size:3rem}}
 </style>
 </head>
 <body>
 <div class="app">
 <header>
-<h1>🧢 Classic Cap Exact Checker</h1>
+<h1>🧢 Classic Cap Exact Checker v2</h1>
 <div>Mario list based / Exact internal names / My Neighbor Alice</div>
 </header>
 <main>
@@ -121,11 +136,7 @@ const CAP_DEFINITIONS=[
   ["Bjorn Patch, Beige Classic Cap","equippable_mna_customizable_cap_beige_bjorn"],
   ["Bjorn Patch, Pastel Purple Classic Cap","equippable_mna_customizable_cap_pastelpurple_bjorn"],
 
-  ["Blank Black Classic Cap","equippable_mna_customizable_cap_black_classic"],
-  ["Blank Red Classic Cap","equippable_mna_customizable_cap_red_classic"],
-  ["Blank Green Classic Cap","equippable_mna_customizable_cap_green_classic"],
-  ["Blank Beige Classic Cap","equippable_mna_customizable_cap_beige_classic"],
-  ["Blank Pastel Purple Classic Cap","equippable_mna_customizable_cap_pastelpurple_classic"],
+  ["Blank Black Classic Cap","equippable_mna_customizable_cap_black"],
 
   ["Boo Patch, Black Classic Cap","equippable_mna_customizable_cap_black_boo"],
   ["Boo Patch, Red Classic Cap","equippable_mna_customizable_cap_red_boo"],
@@ -359,13 +370,48 @@ function itemTotals(){
   }).sort((a,b)=>b.total-a.total||a.label.localeCompare(b.label));
 }
 
+
+function capInfo(label){
+  const colorMatch = String(label).match(/\b(Black|Red|Green|Beige|Pastel Purple)\b/i);
+  let color = colorMatch ? colorMatch[1] : "";
+  let colorKey = color.toLowerCase().replace(/\s+/g,"_");
+  if(colorKey==="pastel_purple") colorKey="purple";
+
+  let patch = String(label)
+    .replace(/,\s*Classic Cap/i,"")
+    .replace(/\s+Classic Cap/i,"")
+    .replace(/\bBlack\b|\bRed\b|\bGreen\b|\bBeige\b|\bPastel Purple\b/ig,"")
+    .replace(/\bPatch\b/ig,"")
+    .replace(/\s+/g," ")
+    .trim();
+
+  patch = patch
+    .replace("MNA Classic","MNA")
+    .replace("Unicorn Power","Unicorn")
+    .replace("Happy Dog","Dog");
+
+  if(/^Blank/i.test(label)){
+    patch = "Blank";
+    if(!color) color = "Black";
+    if(!colorKey) colorKey = "black";
+  }
+
+  return {patch:patch, color:color, colorKey:colorKey};
+}
+
+function capShortHtml(label){
+  const info = capInfo(label);
+  const safeColor = escapeHtml(info.colorKey || "black");
+  return '<div class="cap-short"><span class="color-dot color-'+safeColor+'"></span><span class="cap-patch">'+escapeHtml(info.patch)+'</span> <span class="cap-color">'+escapeHtml(info.color)+'</span></div>';
+}
+
 function renderItemsView(){
   const showZero=document.getElementById("showZero").value==="yes";
   const rows=itemTotals().filter(x=>showZero||x.total>0);
   document.getElementById("itemsView").innerHTML=
     '<table class="result-table"><thead><tr><th>Item</th><th class="num">Total</th><th class="num">Owners</th><th>Internal name</th></tr></thead><tbody>'+
     rows.map(r=>
-      '<tr><td><b>'+escapeHtml(r.label)+'</b></td>'+
+      '<tr><td>'+capShortHtml(r.label)+'<div class="small">'+escapeHtml(r.label)+'</div></td>'+
       '<td class="num">'+r.total.toLocaleString()+'</td>'+
       '<td class="num">'+r.owners.toLocaleString()+'</td>'+
       '<td class="matched"><code>'+escapeHtml(r.internalName)+'</code></td></tr>'
@@ -380,12 +426,20 @@ function renderUsersView(){
     const cards=CAP_DEFINITIONS
       .map(([label])=>({label,r:u.counts[label]}))
       .filter(x=>showZero||x.r.amount>0)
-      .map(x=>
-        '<div class="item-card"><span class="item-count">'+Number(x.r.amount||0).toLocaleString()+'</span>'+
-        '<div class="item-name">'+escapeHtml(x.label)+'</div>'+
-        '<div class="small"><code>'+escapeHtml(x.r.internalName)+'</code></div></div>'
-      ).join("");
-    return '<div class="user-card"><div class="user-title">'+escapeHtml(u.username)+' <span class="small">total: '+u.total.toLocaleString()+' / items: '+u.itemKinds.toLocaleString()+' kinds</span></div><div class="grid">'+(cards||'<div class="note">表示対象なし</div>')+'</div></div>';
+      .map(x=>{
+        const hasItem=Number(x.r.amount||0)>0;
+        return '<div class="item-card '+(hasItem?'has-item':'')+'"><span class="item-count">'+Number(x.r.amount||0).toLocaleString()+'</span>'+
+        capShortHtml(x.label)+
+        '<div class="small"><code>'+escapeHtml(x.r.internalName)+'</code></div></div>';
+      }).join("");
+
+    return '<div class="user-card">'+
+      '<div class="user-head">'+
+        '<div><div class="user-title">'+escapeHtml(u.username)+'</div><div class="small">items: '+u.itemKinds.toLocaleString()+' kinds</div></div>'+
+        '<div><div class="user-total-big">'+u.total.toLocaleString()+'</div><div class="user-total-label">Total Caps</div></div>'+
+      '</div>'+
+      '<div class="grid">'+(cards||'<div class="note">表示対象なし</div>')+'</div>'+
+    '</div>';
   }).join("");
 }
 
