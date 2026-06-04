@@ -68,8 +68,8 @@ code{background:rgba(0,0,0,.06);padding:2px 5px;border-radius:6px}
 <main>
 
 <div class="panel">
-<label for="usernameList">ユーザーリスト（players_multi_example.jsonから初期表示／編集可）</label>
-<textarea id="usernameList" placeholder="players_multi_example.json から読み込みます。ここで追加・削除もできます。"></textarea>
+<label for="usernameList">ユーザーリスト（players_mario_cap.jsonから初期表示／編集可）</label>
+<textarea id="usernameList" placeholder="players_mario_cap.json から読み込みます。ここで追加・削除もできます。"></textarea>
 <div class="controls">
 <button id="startButton" onclick="startCheck()">保有数を調べる</button>
 <button class="secondary" onclick="copySummaryText()">集計をコピー</button>
@@ -84,7 +84,7 @@ Blank Cap は <code>_classic</code>、GM Patch は <code>_gmpink</code>、MNA Cl
 </div>
 </div>
 
-<div class="status" id="status">players_multi_example.json を読み込み中です。</div>
+<div class="status" id="status">players_mario_cap.json を読み込み中です。</div>
 <div class="progress-wrap" id="progressWrap"><div class="progress-bar" id="progressBar"></div><div class="progress-text" id="progressText">0 / 0</div></div>
 
 <section class="summary" id="summary">
@@ -180,14 +180,14 @@ window.addEventListener("DOMContentLoaded",async()=>{await loadUsernamesFromJson
 
 async function loadUsernamesFromJson(){
   try{
-    const r=await fetch("players_multi_example.json?ts="+Date.now());
+    const r=await fetch("players_mario_cap.json?ts="+Date.now());
     if(!r.ok)throw new Error("HTTP "+r.status);
     const data=await r.json();
     const names=normalizePlayerNames(data);
     document.getElementById("usernameList").value=names.join("\n");
-    setStatus("players_multi_example.json を初期表示しました: "+names.length+"人。必要に応じて編集できます。");
+    setStatus("players_mario_cap.json を初期表示しました: "+names.length+"人。必要に応じて編集できます。");
   }catch(e){
-    setStatus("players_multi_example.json の読み込みに失敗しました: "+e.message,true);
+    setStatus("players_mario_cap.json の読み込みに失敗しました: "+e.message,true);
   }
 }
 
