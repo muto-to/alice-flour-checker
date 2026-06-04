@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<title>My Neighbor Alice - Classic Cap Exact Checker</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+:root{--panel:#fff8ea;--text:#4f432f;--muted:#8a806f;--accent:#d6a33a;--accent2:#9c6b22;--good:#2f8d55;--bad:#b6533c;--line:#d7c8aa;--shadow:rgba(78,61,33,.18)}
+*{box-sizing:border-box}
+body{margin:0;min-height:100vh;font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:linear-gradient(180deg,#f7f0e1,#eadcc1);color:var(--text);padding:20px}
+.app{max-width:1320px;margin:0 auto;background:var(--panel);border:3px solid var(--line);border-radius:28px;box-shadow:0 18px 48px var(--shadow);overflow:hidden}
+header{padding:30px 24px;background:linear-gradient(135deg,#b98a2d,#e1b34b);color:#fff7dc;text-align:center}
+h1{margin:0;font-size:clamp(1.45rem,4vw,2.75rem)}
+main{padding:24px}
+.panel{padding:18px;border-radius:22px;border:2px solid var(--line);background:#fffdf6;margin-bottom:18px}
+label{display:block;font-weight:900;margin-bottom:8px}
+textarea{width:100%;min-height:130px;border:3px solid var(--line);border-radius:16px;padding:14px 16px;font-size:1rem;line-height:1.55;background:#fff;color:var(--text);outline:none;resize:vertical}
+.controls{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:12px}
+button{border:0;border-radius:16px;padding:13px 18px;background:var(--accent);color:#fff;font-weight:900;font-size:1rem;cursor:pointer;box-shadow:0 5px 0 var(--accent2);margin:4px}
+button.secondary{background:#8f9991;box-shadow:0 5px 0 #667069}
+button.danger{background:#ba6658;box-shadow:0 5px 0 #884237}
+button:disabled{opacity:.55}
+input,select{border:2px solid var(--line);border-radius:12px;padding:10px 12px;font-size:1rem;background:white;color:var(--text)}
+.note{margin-top:10px;color:var(--muted);font-size:.9rem;line-height:1.65}
+.status{min-height:30px;margin:12px 0 18px;font-weight:800;color:var(--muted);white-space:pre-wrap}
+.error{color:var(--bad)}
+.progress-wrap{display:none;margin:14px 0;padding:8px;border:2px solid var(--line);border-radius:18px;background:#fffdf6}
+.progress-wrap.show{display:block}
+.progress-bar{height:24px;width:0%;background:linear-gradient(90deg,#8bcf7a,#d6a33a);border-radius:12px}
+.progress-text{font-weight:900;margin-top:6px;color:var(--muted)}
+.summary{display:none;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin-bottom:18px}
+.summary.show{display:grid}
+.summary-card{padding:16px;border-radius:18px;background:#fffdf6;border:2px solid var(--line)}
+.summary-label{color:var(--muted);font-weight:900;margin-bottom:6px;font-size:.85rem}
+.summary-value{font-size:1.55rem;font-weight:1000;color:#5a4a35;word-break:break-word}
+.tabs{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}
+.tab{background:#fffdf6;border:2px solid var(--line);color:var(--text);box-shadow:none}
+.tab.active{background:var(--accent);color:white;border-color:var(--accent)}
+.results{display:none;border-radius:24px;border:3px solid var(--line);background:linear-gradient(180deg,#fffdf8,#f2e6cc);overflow:hidden}
+.results.show{display:block}
+.results-header{padding:16px 18px;background:#e7d8b8;display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.results-title{font-size:1.25rem;font-weight:1000}
+.table-wrap{overflow:auto;max-height:680px}
+.result-table{width:100%;border-collapse:collapse;background:#fffdf7;font-size:.9rem}
+.result-table th,.result-table td{border-bottom:1px solid #eadfc8;padding:9px 10px;vertical-align:top;text-align:left}
+.result-table th{background:#e7d8b8;position:sticky;top:0;z-index:2}
+.num{text-align:right!important;font-weight:1000;color:var(--good);white-space:nowrap}
+.small{font-size:.78rem;color:var(--muted);line-height:1.4}
+.matched{font-size:.76rem;color:#6b5b40;max-width:420px;word-break:break-word}
+.user-card{padding:14px;border-bottom:2px solid var(--line)}
+.user-title{font-weight:1000;font-size:1.2rem}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:10px;margin-top:10px}
+.item-card{border:1px solid var(--line);border-radius:14px;background:#fffaf0;padding:10px}
+.item-name{font-weight:900}
+.item-count{font-size:1.5rem;color:var(--good);font-weight:1000;float:right}
+.failed{display:none;margin-top:18px;padding:16px;border-radius:18px;border:2px solid #e2b0a8;background:#fff2ef;color:var(--bad)}
+.failed.show{display:block}
+code{background:rgba(0,0,0,.06);padding:2px 5px;border-radius:6px}
+@media(max-width:720px){body{padding:10px}main{padding:16px}}
+</style>
+</head>
+<body>
+<div class="app">
+<header>
+<h1>🧢 Classic Cap Exact Checker</h1>
+<div>Mario list based / Exact internal names / My Neighbor Alice</div>
+</header>
+<main>
+
+<div class="panel">
+<label for="usernameList">ユーザーリスト（players_multi_example.jsonから初期表示／編集可）</label>
+<textarea id="usernameList" placeholder="players_multi_example.json から読み込みます。ここで追加・削除もできます。"></textarea>
+<div class="controls">
+<button id="startButton" onclick="startCheck()">保有数を調べる</button>
+<button class="secondary" onclick="copySummaryText()">集計をコピー</button>
+<button class="secondary" onclick="copyPlayersWithItems()">所持者リストをコピー</button>
+<button class="danger" onclick="stopScan()">停止</button>
+<label>同時取得:<input id="concurrency" type="number" value="3" min="1" max="8" style="width:80px"></label>
+<label>0個表示:<select id="showZero" onchange="renderAll()"><option value="yes">する</option><option value="no">しない</option></select></label>
+</div>
+<div class="note">
+Marioさんのページにあった <code>CAPS_LIST</code> の内部名を使うので、前の部分一致版より正確です。
+Blank Cap は <code>_classic</code>、GM Patch は <code>_gmpink</code>、MNA Classic Patch は <code>_classic</code> 系として扱います。
+</div>
+</div>
+
+<div class="status" id="status">players_multi_example.json を読み込み中です。</div>
+<div class="progress-wrap" id="progressWrap"><div class="progress-bar" id="progressBar"></div><div class="progress-text" id="progressText">0 / 0</div></div>
+
+<section class="summary" id="summary">
+<div class="summary-card"><div class="summary-label">調査成功</div><div class="summary-value" id="successCount">0</div></div>
+<div class="summary-card"><div class="summary-label">対象Cap種類</div><div class="summary-value" id="targetCount">0</div></div>
+<div class="summary-card"><div class="summary-label">総Cap数</div><div class="summary-value" id="grandTotal">0</div></div>
+<div class="summary-card"><div class="summary-label">所持者数</div><div class="summary-value" id="ownerCount">0</div></div>
+</section>
+
+<div class="tabs">
+<button class="tab active" id="tabItems" onclick="setView('items')">アイテム別</button>
+<button class="tab" id="tabUsers" onclick="setView('users')">ユーザー別</button>
+</div>
+
+<section class="results" id="results">
+<div class="results-header"><div class="results-title" id="resultsTitle">Item Summary</div><div class="note">内部名完全一致で集計</div></div>
+<div id="itemsView" class="table-wrap"></div>
+<div id="usersView" style="display:none"></div>
+</section>
+
+<section class="failed" id="failedBox"><strong>取得できなかったユーザー</strong><div id="failedList"></div></section>
+</main>
+</div>
+
+<script>
+const BASE_URL="https://postchain-p-node1.myneighboralice.com/query/F31D7A38B33D12A5D948EE9CF170983A7CA5EFFFAAA31094C5B9CF94442D9FA2";
+let shouldStop=false,doneCount=0,totalCount=0,currentView="items";
+let lastResults=[],lastFailures=[];
+
+const CAP_DEFINITIONS=[
+  ["Bjorn Patch, Black Classic Cap","equippable_mna_customizable_cap_black_bjorn"],
+  ["Bjorn Patch, Red Classic Cap","equippable_mna_customizable_cap_red_bjorn"],
+  ["Bjorn Patch, Green Classic Cap","equippable_mna_customizable_cap_green_bjorn"],
+  ["Bjorn Patch, Beige Classic Cap","equippable_mna_customizable_cap_beige_bjorn"],
+  ["Bjorn Patch, Pastel Purple Classic Cap","equippable_mna_customizable_cap_pastelpurple_bjorn"],
+
+  ["Blank Black Classic Cap","equippable_mna_customizable_cap_black_classic"],
+  ["Blank Red Classic Cap","equippable_mna_customizable_cap_red_classic"],
+  ["Blank Green Classic Cap","equippable_mna_customizable_cap_green_classic"],
+  ["Blank Beige Classic Cap","equippable_mna_customizable_cap_beige_classic"],
+  ["Blank Pastel Purple Classic Cap","equippable_mna_customizable_cap_pastelpurple_classic"],
+
+  ["Boo Patch, Black Classic Cap","equippable_mna_customizable_cap_black_boo"],
+  ["Boo Patch, Red Classic Cap","equippable_mna_customizable_cap_red_boo"],
+  ["Boo Patch, Green Classic Cap","equippable_mna_customizable_cap_green_boo"],
+  ["Boo Patch, Beige Classic Cap","equippable_mna_customizable_cap_beige_boo"],
+  ["Boo Patch, Pastel Purple Classic Cap","equippable_mna_customizable_cap_pastelpurple_boo"],
+
+  ["Chromia Patch, Black Classic Cap","equippable_mna_customizable_cap_black_chromia"],
+  ["Chromia Patch, Red Classic Cap","equippable_mna_customizable_cap_red_chromia"],
+  ["Chromia Patch, Green Classic Cap","equippable_mna_customizable_cap_green_chromia"],
+  ["Chromia Patch, Beige Classic Cap","equippable_mna_customizable_cap_beige_chromia"],
+  ["Chromia Patch, Pastel Purple Classic Cap","equippable_mna_customizable_cap_pastelpurple_chromia"],
+
+  ["MNA Classic Patch, Black Classic Cap","equippable_mna_customizable_cap_black_classic"],
+  ["MNA Classic Patch, Red Classic Cap","equippable_mna_customizable_cap_red_classic"],
+  ["MNA Classic Patch, Green Classic Cap","equippable_mna_customizable_cap_green_classic"],
+  ["MNA Classic Patch, Beige Classic Cap","equippable_mna_customizable_cap_beige_classic"],
+  ["MNA Classic Patch, Pastel Purple Classic Cap","equippable_mna_customizable_cap_pastelpurple_classic"],
+
+  ["Cowbell Patch, Black Classic Cap","equippable_mna_customizable_cap_black_cowbell"],
+  ["Cowbell Patch, Red Classic Cap","equippable_mna_customizable_cap_red_cowbell"],
+  ["Cowbell Patch, Green Classic Cap","equippable_mna_customizable_cap_green_cowbell"],
+  ["Cowbell Patch, Beige Classic Cap","equippable_mna_customizable_cap_beige_cowbell"],
+  ["Cowbell Patch, Pastel Purple Classic Cap","equippable_mna_customizable_cap_pastelpurple_cowbell"],
+
+  ["Flourish Patch, Black Classic Cap","equippable_mna_customizable_cap_black_flourish"],
+  ["Flourish Patch, Red Classic Cap","equippable_mna_customizable_cap_red_flourish"],
+  ["Flourish Patch, Green Classic Cap","equippable_mna_customizable_cap_green_flourish"],
+  ["Flourish Patch, Beige Classic Cap","equippable_mna_customizable_cap_beige_flourish"],
+  ["Flourish Patch, Pastel Purple Classic Cap","equippable_mna_customizable_cap_pastelpurple_flourish"],
+
+  ["GM Patch, Black Classic Cap","equippable_mna_customizable_cap_black_gmpink"],
+  ["GM Patch, Red Classic Cap","equippable_mna_customizable_cap_red_gmpink"],
+  ["GM Patch, Green Classic Cap","equippable_mna_customizable_cap_green_gmpink"],
+  ["GM Patch, Beige Classic Cap","equippable_mna_customizable_cap_beige_gmpink"],
+  ["GM Patch, Pastel Purple Classic Cap","equippable_mna_customizable_cap_pastelpurple_gmpink"],
+
+  ["Happy Dog Patch, Black Classic Cap","equippable_mna_customizable_cap_black_happydog"],
+  ["Happy Dog Patch, Red Classic Cap","equippable_mna_customizable_cap_red_happydog"],
+  ["Happy Dog Patch, Green Classic Cap","equippable_mna_customizable_cap_green_happydog"],
+  ["Happy Dog Patch, Beige Classic Cap","equippable_mna_customizable_cap_beige_happydog"],
+  ["Happy Dog Patch, Pastel Purple Classic Cap","equippable_mna_customizable_cap_pastelpurple_happydog"],
+
+  ["Unicorn Power Patch, Black Classic Cap","equippable_mna_customizable_cap_black_unicornpower"],
+  ["Unicorn Power Patch, Red Classic Cap","equippable_mna_customizable_cap_red_unicornpower"],
+  ["Unicorn Power Patch, Green Classic Cap","equippable_mna_customizable_cap_green_unicornpower"],
+  ["Unicorn Power Patch, Beige Classic Cap","equippable_mna_customizable_cap_beige_unicornpower"],
+  ["Unicorn Power Patch, Pastel Purple Classic Cap","equippable_mna_customizable_cap_pastelpurple_unicornpower"]
+];
+
+window.addEventListener("DOMContentLoaded",async()=>{await loadUsernamesFromJson()});
+
+async function loadUsernamesFromJson(){
+  try{
+    const r=await fetch("players_multi_example.json?ts="+Date.now());
+    if(!r.ok)throw new Error("HTTP "+r.status);
+    const data=await r.json();
+    const names=normalizePlayerNames(data);
+    document.getElementById("usernameList").value=names.join("\\n");
+    setStatus("players_multi_example.json を初期表示しました: "+names.length+"人。必要に応じて編集できます。");
+  }catch(e){
+    setStatus("players_multi_example.json の読み込みに失敗しました: "+e.message,true);
+  }
+}
+
+function normalizePlayerNames(data){
+  let names=[];
+  if(Array.isArray(data))names=data.map(x=>typeof x==="string"?x:(x&&typeof x==="object"?(x.username||x.name||""):""));
+  else if(data&&Array.isArray(data.players))names=data.players.map(x=>typeof x==="string"?x:(x&&typeof x==="object"?(x.username||x.name||""):""));
+  return Array.from(new Set(names.map(x=>String(x).trim()).filter(Boolean)));
+}
+
+function parseUsernames(){
+  return Array.from(new Set(document.getElementById("usernameList").value.split(/\\r?\\n|,/).map(x=>x.trim()).filter(Boolean)));
+}
+
+function setStatus(m,e=false){
+  const s=document.getElementById("status");
+  s.textContent=m;
+  s.className=e?"status error":"status";
+}
+
+function setLoading(v){
+  const b=document.getElementById("startButton");
+  b.disabled=v;
+  b.textContent=v?"調査中...":"保有数を調べる";
+}
+
+function stopScan(){
+  shouldStop=true;
+  setStatus("停止リクエストを出しました。現在の処理が終わるまで少し待ってください。");
+}
+
+function updateProgress(done,total){
+  const p=total>0?Math.round(done/total*100):0;
+  document.getElementById("progressBar").style.width=p+"%";
+  document.getElementById("progressText").textContent=done.toLocaleString()+" / "+total.toLocaleString()+" ("+p+"%)";
+}
+
+async function fetchJson(url){
+  const r=await fetch(url);
+  if(!r.ok)throw new Error("HTTP "+r.status);
+  return await r.json();
+}
+
+async function findPlayerByUsername(username){
+  return await fetchJson(BASE_URL+"?type=player.find_by_username&username="+encodeURIComponent(username));
+}
+
+async function listAssetsByPlayer(accountId){
+  return await fetchJson(BASE_URL+"?type=admin.list_assets_by_player&account_id="+encodeURIComponent(accountId));
+}
+
+function flattenAssets(data){
+  const items=[];
+  if(!data||typeof data!=="object")return items;
+  Object.values(data).forEach(v=>{
+    if(Array.isArray(v)){
+      v.forEach(i=>{
+        if(i&&i.name)items.push({name:String(i.name),amount:Number(i.amount||1),types:Array.isArray(i.types)?i.types:[]});
+      });
+    }
+  });
+  return items;
+}
+
+function countByInternalName(assets,internalName){
+  return assets
+    .filter(a=>String(a.name).trim()===internalName)
+    .reduce((sum,a)=>sum+Number(a.amount||1),0);
+}
+
+async function checkOneUser(username){
+  const player=await findPlayerByUsername(username);
+  if(!player||!player.id)throw new Error("Player not found");
+  const assets=flattenAssets(await listAssetsByPlayer(player.id));
+  const counts={};
+  let total=0;
+  CAP_DEFINITIONS.forEach(([label,internalName])=>{
+    const amount=countByInternalName(assets,internalName);
+    counts[label]={amount,internalName};
+    total+=amount;
+  });
+  return {username:player.username||username,id:player.id,itemKinds:assets.length,total,counts};
+}
+
+async function startCheck(){
+  shouldStop=false;
+  setLoading(true);
+  lastResults=[];
+  lastFailures=[];
+  doneCount=0;
+  document.getElementById("progressWrap").classList.add("show");
+  updateProgress(0,0);
+  document.getElementById("summary").classList.remove("show");
+  document.getElementById("results").classList.remove("show");
+  document.getElementById("failedBox").classList.remove("show");
+  try{
+    const users=parseUsernames();
+    if(users.length===0)throw new Error("ユーザー名がありません。");
+    totalCount=users.length;
+    updateProgress(0,totalCount);
+    const concurrency=Math.max(1,Math.min(8,Number(document.getElementById("concurrency").value||3)));
+    setStatus(users.length+"人 / "+CAP_DEFINITIONS.length+"種類を調査します。同時取得: "+concurrency);
+    const results=[],failures=[];
+    let index=0;
+    async function worker(){
+      while(index<users.length&&!shouldStop){
+        const username=users[index++];
+        try{
+          setStatus("調査中 "+(doneCount+1)+"/"+totalCount+": "+username);
+          results.push(await checkOneUser(username));
+        }catch(e){
+          failures.push({username,error:e.message});
+        }finally{
+          doneCount++;
+          updateProgress(doneCount,totalCount);
+          if(doneCount%3===0||doneCount===totalCount){
+            lastResults=results.slice();
+            lastFailures=failures.slice();
+            renderAll();
+          }
+          await sleep(150);
+        }
+      }
+    }
+    const ws=[];
+    for(let i=0;i<concurrency;i++)ws.push(worker());
+    await Promise.all(ws);
+    lastResults=results.slice();
+    lastFailures=failures.slice();
+    renderAll();
+    setStatus(shouldStop?"停止しました。取得済みの範囲で表示しています。":"完了: "+results.length+"人を調査しました。");
+  }catch(e){
+    console.error(e);
+    setStatus("取得に失敗しました: "+e.message,true);
+  }finally{
+    setLoading(false);
+  }
+}
+
+function renderAll(){
+  renderSummary();
+  renderItemsView();
+  renderUsersView();
+  renderFailures();
+  document.getElementById("results").classList.add("show");
+}
+
+function renderSummary(){
+  const grand=lastResults.reduce((s,u)=>s+u.total,0);
+  const owners=lastResults.filter(u=>u.total>0).length;
+  document.getElementById("successCount").textContent=lastResults.length.toLocaleString()+"人";
+  document.getElementById("targetCount").textContent=CAP_DEFINITIONS.length.toLocaleString();
+  document.getElementById("grandTotal").textContent=grand.toLocaleString();
+  document.getElementById("ownerCount").textContent=owners.toLocaleString()+"人";
+  document.getElementById("summary").classList.add("show");
+}
+
+function itemTotals(){
+  return CAP_DEFINITIONS.map(([label,internalName])=>{
+    let total=0,owners=0;
+    lastResults.forEach(u=>{
+      const r=u.counts[label];
+      if(r){
+        total+=r.amount;
+        if(r.amount>0)owners++;
+      }
+    });
+    return {label,internalName,total,owners};
+  }).sort((a,b)=>b.total-a.total||a.label.localeCompare(b.label));
+}
+
+function renderItemsView(){
+  const showZero=document.getElementById("showZero").value==="yes";
+  const rows=itemTotals().filter(x=>showZero||x.total>0);
+  document.getElementById("itemsView").innerHTML=
+    '<table class="result-table"><thead><tr><th>Item</th><th class="num">Total</th><th class="num">Owners</th><th>Internal name</th></tr></thead><tbody>'+
+    rows.map(r=>
+      '<tr><td><b>'+escapeHtml(r.label)+'</b></td>'+
+      '<td class="num">'+r.total.toLocaleString()+'</td>'+
+      '<td class="num">'+r.owners.toLocaleString()+'</td>'+
+      '<td class="matched"><code>'+escapeHtml(r.internalName)+'</code></td></tr>'
+    ).join("")+
+    '</tbody></table>';
+}
+
+function renderUsersView(){
+  const showZero=document.getElementById("showZero").value==="yes";
+  const users=lastResults.slice().sort((a,b)=>b.total-a.total||a.username.localeCompare(b.username));
+  document.getElementById("usersView").innerHTML=users.map(u=>{
+    const cards=CAP_DEFINITIONS
+      .map(([label])=>({label,r:u.counts[label]}))
+      .filter(x=>showZero||x.r.amount>0)
+      .map(x=>
+        '<div class="item-card"><span class="item-count">'+Number(x.r.amount||0).toLocaleString()+'</span>'+
+        '<div class="item-name">'+escapeHtml(x.label)+'</div>'+
+        '<div class="small"><code>'+escapeHtml(x.r.internalName)+'</code></div></div>'
+      ).join("");
+    return '<div class="user-card"><div class="user-title">'+escapeHtml(u.username)+' <span class="small">total: '+u.total.toLocaleString()+' / items: '+u.itemKinds.toLocaleString()+' kinds</span></div><div class="grid">'+(cards||'<div class="note">表示対象なし</div>')+'</div></div>';
+  }).join("");
+}
+
+function renderFailures(){
+  if(lastFailures.length>0){
+    document.getElementById("failedList").innerHTML=lastFailures.map(f=>"<div>"+escapeHtml(f.username)+" / "+escapeHtml(f.error)+"</div>").join("");
+    document.getElementById("failedBox").classList.add("show");
+  }else{
+    document.getElementById("failedBox").classList.remove("show");
+  }
+}
+
+function setView(view){
+  currentView=view;
+  document.getElementById("itemsView").style.display=view==="items"?"block":"none";
+  document.getElementById("usersView").style.display=view==="users"?"block":"none";
+  document.getElementById("tabItems").classList.toggle("active",view==="items");
+  document.getElementById("tabUsers").classList.toggle("active",view==="users");
+  document.getElementById("resultsTitle").textContent=view==="items"?"Item Summary":"User Summary";
+}
+
+function copySummaryText(){
+  const lines=["Classic Cap Exact Summary",""];
+  itemTotals().forEach(r=>lines.push(r.label+" / total: "+r.total+" / owners: "+r.owners+" / internal: "+r.internalName));
+  navigator.clipboard.writeText(lines.join("\\n")).then(()=>setStatus("集計をコピーしました。")).catch(()=>setStatus("コピーに失敗しました。",true));
+}
+
+function copyPlayersWithItems(){
+  const lines=["Players with any target caps",""];
+  lastResults.filter(u=>u.total>0).sort((a,b)=>b.total-a.total).forEach(u=>lines.push(u.username+" / total: "+u.total));
+  navigator.clipboard.writeText(lines.join("\\n")).then(()=>setStatus("所持者リストをコピーしました。")).catch(()=>setStatus("コピーに失敗しました。",true));
+}
+
+function sleep(ms){return new Promise(r=>setTimeout(r,ms))}
+function escapeHtml(v){return String(v).replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;").replaceAll('"',"&quot;").replaceAll("'","&#039;")}
+</script>
+</body>
+</html>
